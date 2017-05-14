@@ -4,6 +4,7 @@ class OrdersController < ApplicationController
     @order = Order.new(order_params)
     @order.total = current_cart.total_price
     @order.user = current_user
+    @order.payment_id = 1
 
     if @order.save
 
@@ -21,7 +22,8 @@ class OrdersController < ApplicationController
 
       redirect_to order_path(@order.token), notice:"成功生成订单"
     else
-      redirect_to :back
+       render 'carts/checkout'
+       flash[:alert] = "jjjj"
     end
   end
 
