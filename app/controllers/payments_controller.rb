@@ -1,8 +1,8 @@
 class PaymentsController < ApplicationController
 
-  protect_from_forgery except: [:alipay_notify]
+  protect_from_forgery except: [:pay_return, :pay_notify]
 
-  before_action :authenticate_user!, except: [:pay_notify]
+  before_action :authenticate_user!, except: [:pay_return, :pay_notify]
   # before_action :auth_request, only: [:pay_return, :pay_notify]
   # before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
 
@@ -18,7 +18,7 @@ class PaymentsController < ApplicationController
   end
 
   def pay_notify
-    do_payment-test
+    do_payment_test
   end
 
   def test
