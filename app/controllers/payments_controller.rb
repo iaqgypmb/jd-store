@@ -46,8 +46,9 @@ class PaymentsController < ApplicationController
   end
 
   def do_payment_test
-    @payment = params[:pay_id]
-    redirect_to test_payments_path
+    @payment = Payment.find_by_payment_no(params[:pay_id])
+    @pay = params[:pay_no]
+    redirect_to test_payments_path(@payment, @pay)
   end
 
   def do_payment
