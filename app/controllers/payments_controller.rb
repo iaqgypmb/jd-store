@@ -14,11 +14,15 @@ class PaymentsController < ApplicationController
   end
 
   def pay_return
-    do_payment
+    do_payment-test
   end
 
   def pay_notify
-    do_payment
+    do_payment-test
+  end
+
+  def test
+
   end
 
   def success
@@ -39,6 +43,10 @@ class PaymentsController < ApplicationController
   private
   def is_payment_success?
     !params[:pay_no].nil?
+  end
+
+  def do_payment-test
+    redirect_to test_payments_path
   end
 
   def do_payment
