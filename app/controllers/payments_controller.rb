@@ -18,12 +18,10 @@ class PaymentsController < ApplicationController
   end
 
   def pay_notify
-    do_payment_test
+    render :json => "ok"
   end
 
   def test
-   render :json => "ok"
-   redirect_to success_payments_path
   end
 
   def success
@@ -51,8 +49,6 @@ class PaymentsController < ApplicationController
     unless @payment.is_success? # 避免同步通知和异步通知多次调用
       if is_payment_success?
         @payment.do_success_payment! params
-        # redirect_to success_payments_path
-        render :json => "ok"
         redirect_to success_payments_path
       else
         @payment.do_failed_payment! params
