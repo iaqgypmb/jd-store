@@ -58,8 +58,6 @@ class PaymentsController < ApplicationController
     else
      redirect_to success_payments_path
     end
-    @pay = params[:pay_no]
-    redirect_to test_payments_path(:id => @payment.payment_no)
   end
 
   def do_payment
