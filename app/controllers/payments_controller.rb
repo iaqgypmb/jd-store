@@ -47,6 +47,17 @@ class PaymentsController < ApplicationController
 
   def do_payment_test
     @payment = Payment.find_by_payment_no(params[:pay_id])
+    unless @payment.is_success? # 避免同步通知和异步通知多次调用
+      if is_payment_success?
+        @payment.do_success_payment! params
+        redirect_to success_payments_path
+      else
+        @payment.do_failed_payment! params
+        redirect_to failed_payments_path
+      end
+    else
+     redirect_to success_payments_path
+    end
     @pay = params[:pay_no]
     redirect_to test_payments_path(:id => @payment.payment_no)
   end
