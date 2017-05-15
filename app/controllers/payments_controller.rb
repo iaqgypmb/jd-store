@@ -52,7 +52,8 @@ class PaymentsController < ApplicationController
       if is_payment_success?
         @payment.do_success_payment! params
         # redirect_to success_payments_path
-        redirect_to test_payment_path
+        render :json => "ok"
+        redirect_to success_payments_path
       else
         @payment.do_failed_payment! params
         redirect_to failed_payments_path
