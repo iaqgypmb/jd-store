@@ -14,7 +14,7 @@ class PaymentsController < ApplicationController
   end
 
   def pay_return
-    do_payment-test
+    do_payment_test
   end
 
   def pay_notify
@@ -45,7 +45,7 @@ class PaymentsController < ApplicationController
     !params[:pay_no].nil?
   end
 
-  def do_payment-test
+  def do_payment_test
     redirect_to test_payments_path
   end
 
