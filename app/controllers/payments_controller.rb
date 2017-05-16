@@ -17,6 +17,8 @@ class PaymentsController < ApplicationController
       partner: @pay_options["partner"],
       seller_id: @pay_options["seller_id"],
       pay_type: @pay_options["pay_type"],
+      payment_type: "1",
+      page: "4",
       notify_url: @pay_options["notify_url"],
       return_url: @pay_options["return_url"],
       anti_phishing_key: @pay_options["anti_phishing_key"],
@@ -27,11 +29,15 @@ class PaymentsController < ApplicationController
       body: @pay_options["body"],
       _input_charset: @pay_options["_input_charset"],
       sign_type: @pay_options["sign_type"],
-      sign: @pay_options["sign"],
-      page: "2"
+      sign: @pay_options["sign"]
+
     }.to_query
 
-    @raw = body
+
+    @pay_qr = JSON.parse(body)["qrcode"].split('?').flatten[1]
+
+    @qr = RQRCode::QRCode.new(@pay_qr, :size => 6, :level => :h )
+
   end
 
   def pay_return
@@ -39,7 +45,8 @@ class PaymentsController < ApplicationController
   end
 
   def pay_notify
-    render :json => "ok"
+    # render :json => "ok"
+    do_payment_test
   end
 
   def test
@@ -129,6 +136,7 @@ def build_request_options payment
     "service" => 'create_direct_pay_by_user',
     "partner" => ENV['ALIPAY_PID'],
     "seller_id" => ENV['ALIPAY_PID'],
+    "payment_type" => "1",
     "pay_type" => "1",
     "notify_url" => ENV['ALIPAY_NOTIFY_URL'],
     "return_url" => ENV['ALIPAY_RETURN_URL'],
@@ -142,7 +150,7 @@ def build_request_options payment
     "_input_charset" => "utf-8",
     "sign_type" => 'MD5',
     "sign" => "",
-    "page" => "2"
+    "page" => "4"
   }
 
   pay_options.merge!("sign" => build_generate_sign(pay_options))
