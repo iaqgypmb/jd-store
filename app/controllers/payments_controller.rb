@@ -11,6 +11,27 @@ class PaymentsController < ApplicationController
     @payment = current_user.payments.find_by(payment_no: params[:payment_no])
     @payment_url = build_payment_url
     @pay_options = build_request_options(@payment)
+
+    body = RestClient.get ENV['ALIPAY_URL'] + "?" + {
+      service: @pay_options["service"],
+      partner: @pay_options["partner"],
+      seller_id: @pay_options["seller_id"],
+      pay_type: @pay_options["pay_type"],
+      notify_url: @pay_options["notify_url"],
+      return_url: @pay_options["return_url"],
+      anti_phishing_key: @pay_options["anti_phishing_key"],
+      exter_invoke_ip: @pay_options["exter_invoke_ip"],
+      out_trade_no: @pay_options["out_trade_no"],
+      subject: @pay_options["subject"],
+      total_fee: @pay_options["total_fee"],
+      body: @pay_options["body"],
+      _input_charset: @pay_options["_input_charset"],
+      sign_type: @pay_options["sign_type"],
+      sign: @pay_options["sign"],
+      page: "2"
+    }.to_query
+
+    @raw = body
   end
 
   def pay_return
@@ -120,7 +141,8 @@ def build_request_options payment
     "body" => "商店大赛加油站",
     "_input_charset" => "utf-8",
     "sign_type" => 'MD5',
-    "sign" => ""
+    "sign" => "",
+    "page" => "2"
   }
 
   pay_options.merge!("sign" => build_generate_sign(pay_options))
