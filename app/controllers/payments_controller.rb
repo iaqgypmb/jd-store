@@ -55,7 +55,6 @@ class PaymentsController < ApplicationController
   end
 
   def pay_notify
-    # render :json => "ok"
     redirect_to success_payments_path
   end
 
