@@ -48,14 +48,16 @@ class PaymentsController < ApplicationController
         call: ""
       }.to_query
     @order_status = JSON.parse(body2)["status"]
+
+
   end
 
   def pay_return
-    redirect_to success_payments_path
+    redirect_to "/products"
   end
 
   def pay_notify
-    redirect_to success_payments_path
+    redirect_to "/products"
   end
 
   def test
