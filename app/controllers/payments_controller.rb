@@ -51,7 +51,7 @@ class PaymentsController < ApplicationController
   end
 
   def pay_return
-    do_payment_test
+    redirect_to success_payments_path
   end
 
   def pay_notify
