@@ -33,11 +33,21 @@ class PaymentsController < ApplicationController
 
     }.to_query
 
-
+    @raw = body
+    @raw_order = JSON.parse(body)["order_id"]
     @pay_qr = JSON.parse(body)["qrcode"].split('?').flatten[1]
 
     @qr = RQRCode::QRCode.new(@pay_qr, :size => 6, :level => :h )
 
+
+
+    body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
+        id: ENV['ALIPAY_PID'],
+        order_id: @raw_order,
+        token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
+        call: ""
+      }.to_query
+    @order_status = JSON.parse(body2)["status"]
   end
 
   def pay_return
