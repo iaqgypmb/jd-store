@@ -15,6 +15,7 @@ Rails.application.routes.draw do
     end
   end
 
+
   resources :products do
     member do
       post :add_to_cart
@@ -52,6 +53,6 @@ Rails.application.routes.draw do
     end
 end
 
-
+  resources :cellphone_tokens, only: [:create]
 
 end
