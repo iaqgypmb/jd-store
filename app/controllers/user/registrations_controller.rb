@@ -1,0 +1,24 @@
+class User::RegistrationsController < Devise::RegistrationsController
+
+  def new
+    super
+    @is_using_email = true
+  end
+
+  def create
+    super
+    @is_using_email = (params[:user] and !params[:user][:email].nil?)
+
+    @user = User.new(params.require(:user)
+    .permit(:email, :password, :password_confirmation, :cellphone, :token))
+    @user.uuid = session[:user_uuid]
+
+
+      if @user.save
+        flash[:notice] = "注册成功，请登录"
+        redirect_to new_session_path
+      else
+        render action: :new
+      end
+  end
+end
