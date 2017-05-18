@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170324064327) do
+ActiveRecord::Schema.define(version: 20170517114145) do
 
   create_table "cart_items", force: :cascade do |t|
     t.integer  "cart_id"
@@ -61,7 +61,7 @@ ActiveRecord::Schema.define(version: 20170324064327) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.string   "email",                  default: "",    null: false
+    t.string   "email",                  default: ""
     t.string   "encrypted_password",     default: "",    null: false
     t.string   "reset_password_token"
     t.datetime "reset_password_sent_at"
@@ -74,8 +74,19 @@ ActiveRecord::Schema.define(version: 20170324064327) do
     t.datetime "created_at",                             null: false
     t.datetime "updated_at",                             null: false
     t.boolean  "is_admin",               default: false
-    t.index ["email"], name: "index_users_on_email", unique: true
+    t.string   "cellphone"
+    t.index ["cellphone"], name: "index_users_on_cellphone"
+    t.index ["email"], name: "index_users_on_email"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+  end
+
+  create_table "verify_tokens", force: :cascade do |t|
+    t.string   "token"
+    t.string   "cellphone"
+    t.datetime "expired_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cellphone", "token"], name: "index_verify_tokens_on_cellphone_and_token"
   end
 
 end
