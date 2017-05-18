@@ -10,26 +10,26 @@ class PaymentsController < ApplicationController
   def index
     @payment = current_user.payments.find_by(payment_no: params[:payment_no])
     @payment_url = build_payment_url
-    @pay_options = build_request_options(@payment)
+    $pay_options = build_request_options(@payment)
 
     body = RestClient.get ENV['ALIPAY_URL'] + "?" + {
-      service: @pay_options["service"],
-      partner: @pay_options["partner"],
-      seller_id: @pay_options["seller_id"],
-      pay_type: @pay_options["pay_type"],
+      service: $pay_options["service"],
+      partner: $pay_options["partner"],
+      seller_id: $pay_options["seller_id"],
+      pay_type: $pay_options["pay_type"],
       payment_type: "1",
       page: "4",
-      notify_url: @pay_options["notify_url"],
-      return_url: @pay_options["return_url"],
-      anti_phishing_key: @pay_options["anti_phishing_key"],
-      exter_invoke_ip: @pay_options["exter_invoke_ip"],
-      out_trade_no: @pay_options["out_trade_no"],
-      subject: @pay_options["subject"],
-      total_fee: @pay_options["total_fee"],
-      body: @pay_options["body"],
-      _input_charset: @pay_options["_input_charset"],
-      sign_type: @pay_options["sign_type"],
-      sign: @pay_options["sign"]
+      notify_url: $pay_options["notify_url"],
+      return_url: $pay_options["return_url"],
+      anti_phishing_key: $pay_options["anti_phishing_key"],
+      exter_invoke_ip: $pay_options["exter_invoke_ip"],
+      out_trade_no: $pay_options["out_trade_no"],
+      subject: $pay_options["subject"],
+      total_fee: $pay_options["total_fee"],
+      body: $pay_options["body"],
+      _input_charset: $pay_options["_input_charset"],
+      sign_type: $pay_options["sign_type"],
+      sign: $pay_options["sign"]
 
     }.to_query
 
@@ -41,6 +41,53 @@ class PaymentsController < ApplicationController
 
   end
 
+
+  def create_payment
+
+    body = RestClient.get ENV['ALIPAY_URL'] + "?" + {
+      service: $pay_options["service"],
+      partner: $pay_options["partner"],
+      seller_id: $pay_options["seller_id"],
+      pay_type: $pay_options["pay_type"],
+      payment_type: "1",
+      page: "4",
+      notify_url: $pay_options["notify_url"],
+      return_url: $pay_options["return_url"],
+      anti_phishing_key: $pay_options["anti_phishing_key"],
+      exter_invoke_ip: $pay_options["exter_invoke_ip"],
+      out_trade_no: $pay_options["out_trade_no"],
+      subject: $pay_options["subject"],
+      total_fee: $pay_options["total_fee"],
+      body: $pay_options["body"],
+      _input_charset: $pay_options["_input_charset"],
+      sign_type: $pay_options["sign_type"],
+      sign: $pay_options["sign"]
+
+    }.to_query
+
+    @raw = JSON.parse(body)
+
+    $raw_order = JSON.parse(body)["order_id"]
+
+    @pay_qr = JSON.parse(body)["qrcode"].split('?').flatten[1]
+
+    @qr = RQRCode::QRCode.new(@pay_qr, :size => 6, :level => :h )
+
+    render :json => { :qrcode => @qr, :raw => @raw }
+
+  end
+
+  def get_payment_status
+    body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
+      id: ENV['ALIPAY_PID'],
+      order_id: @raw_order,
+      token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
+      call: ""
+    }.to_query
+    order_status = JSON.parse(body2)["status"]
+  end
+
+
   def pay_return
     do_payment_test
   end
@@ -51,18 +98,17 @@ class PaymentsController < ApplicationController
   end
 
   def test
-    @raw_order = params[:id]
-    order_status = 0
-    while (order_status != 1)
-      body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
-        id: ENV['ALIPAY_PID'],
-        order_id: @raw_order,
-        token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
-        call: ""
-      }.to_query
-      order_status = JSON.parse(body2)["status"]
-    end
-    redirect_to success_payments_path
+    body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
+      id: ENV['ALIPAY_PID'],
+      order_id: params[:order],
+      token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
+      call: ""
+    }.to_query
+    order_status = JSON.parse(body2)["status"]
+    @test = order_status
+
+    render :json => { :liang => @test, :order => params[:order] }
+
   end
 
   def success
