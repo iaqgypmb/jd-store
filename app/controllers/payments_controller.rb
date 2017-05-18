@@ -39,28 +39,30 @@ class PaymentsController < ApplicationController
 
     @qr = RQRCode::QRCode.new(@pay_qr, :size => 6, :level => :h )
 
+  end
 
+  def pay_return
+    do_payment_test
+  end
 
-    body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
+  def pay_notify
+    # render :json => "ok"
+    do_payment_test
+  end
+
+  def test
+    @raw_order = params[:id]
+    order_status = 0
+    while (order_status != 1)
+      body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
         id: ENV['ALIPAY_PID'],
         order_id: @raw_order,
         token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
         call: ""
       }.to_query
-    @order_status = JSON.parse(body2)["status"]
-
-
-  end
-
-  def pay_return
-    redirect_to "/products"
-  end
-
-  def pay_notify
-    redirect_to "/products"
-  end
-
-  def test
+      order_status = JSON.parse(body2)["status"]
+    end
+    redirect_to success_payments_path
   end
 
   def success
