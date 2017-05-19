@@ -18,7 +18,7 @@ class PaymentsController < ApplicationController
       seller_id: $pay_options["seller_id"],
       pay_type: $pay_options["pay_type"],
       payment_type: "1",
-      page: "4",
+      page: "3",
       notify_url: $pay_options["notify_url"],
       return_url: $pay_options["return_url"],
       anti_phishing_key: $pay_options["anti_phishing_key"],
@@ -50,7 +50,7 @@ class PaymentsController < ApplicationController
       seller_id: $pay_options["seller_id"],
       pay_type: $pay_options["pay_type"],
       payment_type: "1",
-      page: "4",
+      page: "3",
       notify_url: $pay_options["notify_url"],
       return_url: $pay_options["return_url"],
       anti_phishing_key: $pay_options["anti_phishing_key"],
@@ -207,7 +207,7 @@ def build_request_options payment
     "_input_charset" => "utf-8",
     "sign_type" => 'MD5',
     "sign" => "",
-    "page" => "4"
+    "page" => "3"
   }
 
   pay_options.merge!("sign" => build_generate_sign(pay_options))
