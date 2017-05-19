@@ -81,8 +81,7 @@ class PaymentsController < ApplicationController
     body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
       id: ENV['ALIPAY_PID'],
       order_id: @raw_order,
-      token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
-      call: ""
+      token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp"
     }.to_query
     order_status = JSON.parse(body2)["status"]
   end
