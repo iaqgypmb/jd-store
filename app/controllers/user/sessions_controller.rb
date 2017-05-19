@@ -1,7 +1,7 @@
 class User::SessionsController < Devise::RegistrationsController
 
   def new
-    super
+    @user = User.new
   end
 
   def create
@@ -12,7 +12,6 @@ class User::SessionsController < Devise::RegistrationsController
   super
   cookies.delete :user_uuid
   flash[:notice] = "退出成功"
-  redirect_to root_path
-end
+  end
 
 end
