@@ -52,6 +52,7 @@ Rails.application.routes.draw do
     end
 end
 
+resources :cellphone_tokens, only: [:create]
 
 
 end
