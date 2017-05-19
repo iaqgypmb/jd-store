@@ -93,8 +93,7 @@ class PaymentsController < ApplicationController
   end
 
   def pay_notify
-    # render :json => "ok"
-    do_payment_test
+    render :json => "ok"
   end
 
   def test
