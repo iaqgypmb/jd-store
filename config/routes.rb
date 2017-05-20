@@ -1,7 +1,11 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers:{
+    sessions: 'users/sessions',
+    registrations: 'users/registrations',
+  }
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
   root 'products#index'
+  resources :cellphone_tokens, only: [:create]
 
   namespace :admin do
     resources :products
@@ -52,7 +56,6 @@ Rails.application.routes.draw do
     end
 end
 
-resources :cellphone_tokens, only: [:create]
 
 
 end

@@ -16,6 +16,12 @@ class User < ApplicationRecord
     is_admin
   end
 
+  def self.find_for_database_authentication(warden_conditions)
+      conditions = warden_conditions.dup
+      conditions.has_key?(:cellphone) || conditions.has_key?(:email)
+      where(conditions.to_h).first
+    end
+
   private
 
   # TODO
