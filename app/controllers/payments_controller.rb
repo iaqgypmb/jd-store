@@ -2,7 +2,7 @@ class PaymentsController < ApplicationController
 
   protect_from_forgery except: [:pay_return, :pay_notify]
 
-  before_action :authenticate_user!, except: [:pay_return, :pay_notify]
+  before_action :require_login, except: [:pay_return, :pay_notify]
   # before_action :auth_request, only: [:pay_return, :pay_notify]
   # before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
 
