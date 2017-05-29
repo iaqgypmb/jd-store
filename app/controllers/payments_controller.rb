@@ -10,6 +10,7 @@ class PaymentsController < ApplicationController
   def index
     @payment = current_user.payments.find_by(payment_no: params[:payment_no])
     @payment_url = build_payment_url
+    @order = params[:order_token]
     $pay_options = build_request_options(@payment)
 
     body = RestClient.get ENV['ALIPAY_URL'] + "?" + {
@@ -33,7 +34,6 @@ class PaymentsController < ApplicationController
 
     }.to_query
 
-    @raw = body
     @raw_order = JSON.parse(body)["order_id"]
     @pay_qr = JSON.parse(body)["qrcode"].split('?').flatten[1]
 
@@ -121,7 +121,7 @@ class PaymentsController < ApplicationController
     @order = Order.find_by_token(params[:id])
     payment = Payment.create_from_orders!(current_user, @order)
 
-    redirect_to payments_path(payment_no: payment.payment_no)
+    redirect_to payments_path(payment_no: payment.payment_no, order_token: @order.token)
   end
 
   private
