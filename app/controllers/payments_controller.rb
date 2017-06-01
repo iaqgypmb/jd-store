@@ -49,12 +49,13 @@ class PaymentsController < ApplicationController
 
 
       body = RestClient.get ENV['ALIPAY_URL'] + "?" + pay_options.to_query
+
       pay_qr = JSON.parse(body)["qr"]
       order_id = JSON.parse(body)["order_id"]
       @qr = RQRCode::QRCode.new(pay_qr, :size => 6, :level => :h )
 
 
-        render :json => { :qrcode => @qr.as_html, :order_id => order_id, :status => "ok" }
+        render :json => { :qrcode => @qr.as_html, :order_id => order_id, :status => "ok", payment_no: payment.payment_no, price: payment.total_money }
 
     else
       render :json => { :status => "支付号已支付或不存在，请重新生成支付" }
@@ -99,6 +100,26 @@ class PaymentsController < ApplicationController
 
   def failed
 
+  end
+
+  def lesson_generat_pay
+    order = current_user.orders.find_by_token(params[:id])
+
+    payment = Payment.new
+      payment.total_money = order.total
+      payment.user = current_user
+      payment.save!
+
+      if payment.save
+      if order.is_paid?
+        redirect_to order_path(order.token), alert: "该订单已支付！"
+      else
+        order.payment = payment
+        order.save!
+      end
+      end
+
+    redirect_to create_payment_payment_path(payment_no: payment.payment_no, id: payment.id)
   end
 
   def generate_pay
