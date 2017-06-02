@@ -236,11 +236,8 @@ def build_is_request_sign_valid? result_options
   options = result_options.to_hash
   options.extract!("controller", "action", "format")
 
-  if options["sign_type"] == "MD5"
-    options["sign"] == build_generate_sign(options)
-  elsif options["sign_type"] == "RSA"
-    build_rsa_verify?(build_sign_data(options.dup), options['sign'])
-  end
+  options["sign"] == build_generate_sign(options)
+
 end
 
 def build_generate_sign options
