@@ -148,12 +148,12 @@ class PaymentsController < ApplicationController
   end
 
   def update_status
-    @payment = Payment.find_by_payment_no(params[:pay_id])
+    @payment = Payment.find_by_payment_no(params[:trade_no])
     redirect_to root_path
   end
 
   def do_payment_test
-    @payment = Payment.find_by_payment_no(params[:pay_id])
+    @payment = Payment.find_by_payment_no(params[:trade_no])
     unless @payment.is_success? # 避免同步通知和异步通知多次调用
       if is_payment_success?
         @payment.do_success_payment! params
@@ -187,7 +187,7 @@ end
   def auth_request_pause
     option = params.to_hash
     if option["code"] != ENV["alipay_code_key"]
-      redirect_to failed_payments_path 
+      redirect_to failed_payments_path
     end
   end
 
