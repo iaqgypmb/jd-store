@@ -21,7 +21,6 @@ class PaymentsController < ApplicationController
   end
 
   def create_payment
-    binding.pry
     payment = current_user.payments.find_by(payment_no: params[:payment_no])
 
     if payment.present? && payment.status == "initial"
