@@ -3,78 +3,65 @@ class PaymentsController < ApplicationController
   protect_from_forgery except: [:pay_return, :pay_notify]
 
   before_action :require_login, except: [:pay_return, :pay_notify]
-  # before_action :auth_request, only: [:pay_return, :pay_notify]
-  # before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
+  before_action :auth_request, only: [:pay_return, :pay_notify]
+  before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
 
 
   def index
+    @order = current_user.orders.find_by_token(params[:order_token])
     @payment = current_user.payments.find_by(payment_no: params[:payment_no])
-    @payment_url = build_payment_url
-    $pay_options = build_request_options(@payment)
-
-    body = RestClient.get ENV['ALIPAY_URL'] + "?" + {
-      service: $pay_options["service"],
-      partner: $pay_options["partner"],
-      seller_id: $pay_options["seller_id"],
-      pay_type: $pay_options["pay_type"],
-      payment_type: "1",
-      page: "3",
-      notify_url: $pay_options["notify_url"],
-      return_url: $pay_options["return_url"],
-      anti_phishing_key: $pay_options["anti_phishing_key"],
-      exter_invoke_ip: $pay_options["exter_invoke_ip"],
-      out_trade_no: $pay_options["out_trade_no"],
-      subject: $pay_options["subject"],
-      total_fee: $pay_options["total_fee"],
-      body: $pay_options["body"],
-      _input_charset: $pay_options["_input_charset"],
-      sign_type: $pay_options["sign_type"],
-      sign: $pay_options["sign"]
-
-    }.to_query
-
-    @raw = body
-    @raw_order = JSON.parse(body)["order_id"]
-    @pay_qr = JSON.parse(body)["qrcode"].split('?').flatten[1]
-
-    @qr = RQRCode::QRCode.new(@pay_qr, :size => 6, :level => :h )
+    if @order.present? && @payment.present? && @order.payment = @payment
+      a = 1
+    elsif @order.is_paid?
+      redirect_to root_path, warning: "该订单已支付！"
+    else
+      redirect_to root_path, alert: "该订单或支付号不存在，请重新下单~！"
+    end
 
   end
 
-
   def create_payment
+    binding.pry
+    payment = current_user.payments.find_by(payment_no: params[:payment_no])
 
-    body = RestClient.get ENV['ALIPAY_URL'] + "?" + {
-      service: $pay_options["service"],
-      partner: $pay_options["partner"],
-      seller_id: $pay_options["seller_id"],
-      pay_type: $pay_options["pay_type"],
-      payment_type: "1",
-      page: "3",
-      notify_url: $pay_options["notify_url"],
-      return_url: $pay_options["return_url"],
-      anti_phishing_key: $pay_options["anti_phishing_key"],
-      exter_invoke_ip: $pay_options["exter_invoke_ip"],
-      out_trade_no: $pay_options["out_trade_no"],
-      subject: $pay_options["subject"],
-      total_fee: $pay_options["total_fee"],
-      body: $pay_options["body"],
-      _input_charset: $pay_options["_input_charset"],
-      sign_type: $pay_options["sign_type"],
-      sign: $pay_options["sign"]
+    if payment.present? && payment.status == "initial"
 
-    }.to_query
+      pay_options = {
+        "service" => 'create_direct_pay_by_user',
+        "partner" => ENV['ALIPAY_PID'],
+        "seller_id" => ENV['ALIPAY_PID'],
+        "payment_type" => "1",
+        "pay_type" => "1",
+        "notify_url" => ENV['ALIPAY_NOTIFY_URL'],
+        "return_url" => ENV['ALIPAY_RETURN_URL'],
 
-    @raw = JSON.parse(body)
+        "anti_phishing_key" => "",
+        "exter_invoke_ip" => "",
+        "out_trade_no" => payment.payment_no,
+        "subject" => "商店大赛加油站",
+        "total_fee" => payment.total_money,
+        "body" => "商店大赛加油站",
+        "_input_charset" => "utf-8",
+        "sign_type" => 'MD5',
+        "sign" => "",
+        "page" => "3"
+      }
+      pay_options.merge!("sign" => build_generate_sign(pay_options))
 
-    $raw_order = JSON.parse(body)["order_id"]
 
-    @pay_qr = JSON.parse(body)["qrcode"].split('?').flatten[1]
+      body = RestClient.get ENV['ALIPAY_URL'] + "?" + pay_options.to_query
 
-    @qr = RQRCode::QRCode.new(@pay_qr, :size => 6, :level => :h )
+      pay_qr = JSON.parse(body)["qr"]
+      order_id = JSON.parse(body)["order_id"]
+      @qr = RQRCode::QRCode.new(pay_qr, :size => 6, :level => :h )
 
-    render :json => { :qrcode => @qr, :raw => @raw }
 
+        render :json => { :test7 => '<%= rucaptcha_image_tag %>', :qrcode => @qr.as_html, :order_id => order_id, :status => "ok", payment_no: payment.payment_no, price: payment.total_money }
+
+    else
+      render :json => { :status => "支付号已支付或不存在，请重新生成支付" }
+
+    end
   end
 
   def get_payment_status
@@ -92,6 +79,7 @@ class PaymentsController < ApplicationController
   end
 
   def pay_notify
+    do_payment_test
     render :json => "ok"
   end
 
@@ -103,10 +91,8 @@ class PaymentsController < ApplicationController
       call: ""
     }.to_query
     order_status = JSON.parse(body2)["status"]
-    @test = order_status
 
-    render :json => { :liang => @test, :order => params[:order] }
-
+    render :json => { :liang => order_status }
   end
 
   def success
@@ -117,11 +103,44 @@ class PaymentsController < ApplicationController
 
   end
 
-  def generate_pay
-    @order = Order.find_by_token(params[:id])
-    payment = Payment.create_from_orders!(current_user, @order)
+  def lesson_generat_pay
+    order = current_user.orders.find_by_token(params[:id])
 
-    redirect_to payments_path(payment_no: payment.payment_no)
+    payment = Payment.new
+      payment.total_money = order.total
+      payment.user = current_user
+      payment.save!
+
+      if payment.save
+      if order.is_paid?
+        redirect_to order_path(order.token), alert: "该订单已支付！"
+      else
+        order.payment = payment
+        order.save!
+      end
+      end
+
+    redirect_to create_payment_payment_path(payment_no: payment.payment_no, id: payment.id)
+  end
+
+  def generate_pay
+    @order = current_user.orders.find_by_token(params[:id])
+
+    payment = Payment.new
+      payment.total_money = @order.total
+      payment.user = current_user
+      payment.save!
+
+      if payment.save
+      if @order.is_paid?
+        redirect_to order_path(@order.token), alert: "该订单已支付！"
+      else
+        @order.payment = payment
+        @order.save!
+      end
+      end
+
+    redirect_to payments_path(payment_no: payment.payment_no, order_token: @order.token)
   end
 
   private
@@ -129,18 +148,19 @@ class PaymentsController < ApplicationController
     !params[:pay_no].nil?
   end
 
+  def update_status
+    @payment = Payment.find_by_payment_no(params[:pay_id])
+    redirect_to root_path
+  end
+
   def do_payment_test
     @payment = Payment.find_by_payment_no(params[:pay_id])
     unless @payment.is_success? # 避免同步通知和异步通知多次调用
       if is_payment_success?
         @payment.do_success_payment! params
-        redirect_to success_payments_path
       else
         @payment.do_failed_payment! params
-        redirect_to failed_payments_path
       end
-    else
-     redirect_to success_payments_path
     end
   end
 
@@ -159,12 +179,6 @@ class PaymentsController < ApplicationController
   end
 
   def auth_request
-  unless build_is_request_from_alipay?(params)
-    Rails.logger.info "PAYMENT DEBUG NON ALIPAY REQUEST: #{params.to_hash}"
-    redirect_to failed_payments_path
-    return
-  end
-
   unless build_is_request_sign_valid?(params)
     Rails.logger.info "PAYMENT DEBUG ALIPAY SIGN INVALID: #{params.to_hash}"
     redirect_to failed_payments_path
@@ -218,17 +232,6 @@ def build_payment_url
   "#{ENV['ALIPAY_URL']}?_input_charset=utf-8"
 end
 
-def build_is_request_from_alipay? result_options
-  return false if result_options[:notify_id].blank?
-
-  body = RestClient.get ENV['ALIPAY_URL'] + "?" + {
-    service: "notify_verify",
-    partner: ENV['ALIPAY_PID'],
-    notify_id: result_options[:notify_id]
-  }.to_query
-
-  body == "true"
-end
 
 def build_is_request_sign_valid? result_options
   options = result_options.to_hash
