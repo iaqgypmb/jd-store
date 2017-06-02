@@ -243,11 +243,8 @@ end
 def build_generate_sign options
   sign_data = build_sign_data(options.dup)
 
-  if options["sign_type"] == "MD5"
     Digest::MD5.hexdigest(sign_data + ENV['ALIPAY_MD5_SECRET'])
-  elsif options["sign_type"] == "RSA"
-    build_rsa_sign(sign_data)
-  end
+
 end
 
 
