@@ -21,6 +21,7 @@ class PaymentsController < ApplicationController
   end
 
   def create_payment
+    binding.pry
     payment = current_user.payments.find_by(payment_no: params[:payment_no])
 
     if payment.present? && payment.status == "initial"
@@ -55,7 +56,7 @@ class PaymentsController < ApplicationController
       @qr = RQRCode::QRCode.new(pay_qr, :size => 6, :level => :h )
 
 
-        render :json => { :qrcode => @qr.as_html, :order_id => order_id, :status => "ok", payment_no: payment.payment_no, price: payment.total_money }
+        render :json => { :test7 => '<%= rucaptcha_image_tag %>', :qrcode => @qr.as_html, :order_id => order_id, :status => "ok", payment_no: payment.payment_no, price: payment.total_money }
 
     else
       render :json => { :status => "支付号已支付或不存在，请重新生成支付" }
