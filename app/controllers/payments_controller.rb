@@ -27,12 +27,12 @@ class PaymentsController < ApplicationController
 
       pay_options = {
         "service" => 'create_direct_pay_by_user',
-        "partner" => ENV['ALIPAY_PID'],
-        "seller_id" => ENV['ALIPAY_PID'],
+        "partner" => ENV["alipay_pid"],
+        "seller_id" => ENV["alipay_pid"],
         "payment_type" => "1",
         "pay_type" => "1",
-        "notify_url" => ENV['ALIPAY_NOTIFY_URL'],
-        "return_url" => ENV['ALIPAY_RETURN_URL'],
+        "notify_url" => "",
+        "return_url" => "",
 
         "anti_phishing_key" => "",
         "exter_invoke_ip" => "",
@@ -48,7 +48,7 @@ class PaymentsController < ApplicationController
       pay_options.merge!("sign" => build_generate_sign(pay_options))
 
 
-      body = RestClient.get ENV['ALIPAY_URL'] + "?" + pay_options.to_query
+      body = RestClient.get ENV["alipay_url"] + "?" + pay_options.to_query
 
       pay_qr = JSON.parse(body)["qr"]
       order_id = JSON.parse(body)["order_id"]
@@ -65,7 +65,7 @@ class PaymentsController < ApplicationController
 
   def get_payment_status
     body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
-      id: ENV['ALIPAY_PID'],
+      id: ENV["alipay_pid"],
       order_id: @raw_order,
       token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp"
     }.to_query
@@ -84,7 +84,7 @@ class PaymentsController < ApplicationController
 
   def test
     body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
-      id: ENV['ALIPAY_PID'],
+      id: ENV["alipay_pid"],
       order_id: params[:order],
       token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
       call: ""
@@ -204,12 +204,12 @@ def build_request_options payment
   #   sign_type: MD5 | RSA
   pay_options = {
     "service" => 'create_direct_pay_by_user',
-    "partner" => ENV['ALIPAY_PID'],
-    "seller_id" => ENV['ALIPAY_PID'],
+    "partner" => ENV['alipay_pid'],
+    "seller_id" => ENV['alipay_pid'],
     "payment_type" => "1",
     "pay_type" => "1",
-    "notify_url" => ENV['ALIPAY_NOTIFY_URL'],
-    "return_url" => ENV['ALIPAY_RETURN_URL'],
+    "notify_url" => "",
+    "return_url" => "",
 
     "anti_phishing_key" => "",
     "exter_invoke_ip" => "",
@@ -228,7 +228,7 @@ def build_request_options payment
 end
 
 def build_payment_url
-  "#{ENV['ALIPAY_URL']}?_input_charset=utf-8"
+  "#{ENV['alipay_pid']}?_input_charset=utf-8"
 end
 
 
@@ -243,7 +243,7 @@ end
 def build_generate_sign options
   sign_data = build_sign_data(options.dup)
 
-    Digest::MD5.hexdigest(sign_data + ENV['ALIPAY_MD5_SECRET'])
+    Digest::MD5.hexdigest(sign_data + ENV["alipay_md5_secret"])
 
 end
 
