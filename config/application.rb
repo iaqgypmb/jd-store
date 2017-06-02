@@ -21,3 +21,5 @@ module Jdstore
     config.assets.precompile += [ Proc.new { |path| File.basename(path) =~ /^[^_].*\.\w+$/ } ]
   end
 end
+
+OURAK_CONFIG = Rails.application.config_for(:our)
