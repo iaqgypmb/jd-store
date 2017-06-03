@@ -6,12 +6,6 @@ require 'rails/all'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-ENV['ALIPAY_PID'] = '10469'
-ENV['ALIPAY_MD5_SECRET'] = '34NrkS8OWTNGiQize4Ng9Ag5nqQoqKxJ'
-ENV['ALIPAY_URL'] = 'https://codepay.fateqq.com:51888/creat_order/'
-ENV['ALIPAY_RETURN_URL'] = 'https://shrouded-reef-16391.herokuapp.com/payments/pay_return'
-ENV['ALIPAY_NOTIFY_URL'] = 'https://shrouded-reef-16391.herokuapp.com/payments/pay_notify'
-
 
 module Jdstore
   class Application < Rails::Application
