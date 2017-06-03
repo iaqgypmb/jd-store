@@ -4,7 +4,7 @@ class PaymentsController < ApplicationController
 
   before_action :require_login, except: [:pay_return, :pay_notify]
   before_action :auth_request, only: [:pay_return, :pay_notify]
-  before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
+  # before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
 
 
   def index
@@ -21,19 +21,18 @@ class PaymentsController < ApplicationController
   end
 
   def create_payment
-    binding.pry
     payment = current_user.payments.find_by(payment_no: params[:payment_no])
 
     if payment.present? && payment.status == "initial"
 
       pay_options = {
         "service" => 'create_direct_pay_by_user',
-        "partner" => ENV['ALIPAY_PID'],
-        "seller_id" => ENV['ALIPAY_PID'],
+        "partner" => ENV["alipay_pid"],
+        "seller_id" => ENV["alipay_pid"],
         "payment_type" => "1",
         "pay_type" => "1",
-        "notify_url" => ENV['ALIPAY_NOTIFY_URL'],
-        "return_url" => ENV['ALIPAY_RETURN_URL'],
+        "notify_url" => "",
+        "return_url" => "",
 
         "anti_phishing_key" => "",
         "exter_invoke_ip" => "",
@@ -49,7 +48,7 @@ class PaymentsController < ApplicationController
       pay_options.merge!("sign" => build_generate_sign(pay_options))
 
 
-      body = RestClient.get ENV['ALIPAY_URL'] + "?" + pay_options.to_query
+      body = RestClient.get ENV["alipay_url"] + "?" + pay_options.to_query
 
       pay_qr = JSON.parse(body)["qr"]
       order_id = JSON.parse(body)["order_id"]
@@ -66,7 +65,7 @@ class PaymentsController < ApplicationController
 
   def get_payment_status
     body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
-      id: ENV['ALIPAY_PID'],
+      id: ENV["alipay_pid"],
       order_id: @raw_order,
       token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp"
     }.to_query
@@ -85,7 +84,7 @@ class PaymentsController < ApplicationController
 
   def test
     body2 = RestClient.get "http://codepay.fateqq.com:52888/ispay?" + {
-      id: ENV['ALIPAY_PID'],
+      id: ENV["alipay_pid"],
       order_id: params[:order],
       token: "xJgDafGbnCJRiCaDFt9YFcjhq4Qb6NEp",
       call: ""
@@ -145,18 +144,21 @@ class PaymentsController < ApplicationController
 
   private
   def is_payment_success?
-    !params[:pay_no].nil?
+    !params[:trade_no].nil?
   end
 
   def update_status
-    @payment = Payment.find_by_payment_no(params[:pay_id])
+    @payment = Payment.find_by_payment_no(params[:out_trade_no])
     redirect_to root_path
   end
 
   def do_payment_test
-    @payment = Payment.find_by_payment_no(params[:pay_id])
+
+    @payment = Payment.find_by_payment_no(params[:out_trade_no])
     unless @payment.is_success? # 避免同步通知和异步通知多次调用
       if is_payment_success?
+        ChinaSMS.use :yunpian, password: ENV["sms_pay"]
+        ChinaSMS.to @payment.user.cellphone, "【大赛加油站】您已成功支付，感谢支持！可进入个人订单查看详情。希望成为你5票中的1票：http://t.cn/RS6vf95"
         @payment.do_success_payment! params
       else
         @payment.do_failed_payment! params
@@ -164,26 +166,34 @@ class PaymentsController < ApplicationController
     end
   end
 
-  def do_payment
-    unless @payment.is_success? # 避免同步通知和异步通知多次调用
-      if is_payment_success?
-        @payment.do_success_payment! params
-        redirect_to success_payments_path
-      else
-        @payment.do_failed_payment! params
-        redirect_to failed_payments_path
-      end
-    else
-     redirect_to success_payments_path
-    end
-  end
+  # def do_payment
+  #
+  #   unless @payment.is_success? # 避免同步通知和异步通知多次调用
+  #     if is_payment_success?
+  #       @payment.do_success_payment! params
+  #       redirect_to success_payments_path
+  #     else
+  #       @payment.do_failed_payment! params
+  #       redirect_to failed_payments_path
+  #     end
+  #   else
+  #    redirect_to success_payments_path
+  #   end
+  # end
 
-  def auth_request
+  def auth_request_pause
   unless build_is_request_sign_valid?(params)
     Rails.logger.info "PAYMENT DEBUG ALIPAY SIGN INVALID: #{params.to_hash}"
     redirect_to failed_payments_path
   end
 end
+
+  def auth_request
+    option = params.to_hash
+    if option["code"] != ENV["alipay_code_key"]
+      redirect_to failed_payments_path
+    end
+  end
 
 def find_and_validate_payment_no
   @payment = Payment.find_by_payment_no params[:out_trade_no]
@@ -205,12 +215,12 @@ def build_request_options payment
   #   sign_type: MD5 | RSA
   pay_options = {
     "service" => 'create_direct_pay_by_user',
-    "partner" => ENV['ALIPAY_PID'],
-    "seller_id" => ENV['ALIPAY_PID'],
+    "partner" => ENV['alipay_pid'],
+    "seller_id" => ENV['alipay_pid'],
     "payment_type" => "1",
     "pay_type" => "1",
-    "notify_url" => ENV['ALIPAY_NOTIFY_URL'],
-    "return_url" => ENV['ALIPAY_RETURN_URL'],
+    "notify_url" => "",
+    "return_url" => "",
 
     "anti_phishing_key" => "",
     "exter_invoke_ip" => "",
@@ -229,7 +239,7 @@ def build_request_options payment
 end
 
 def build_payment_url
-  "#{ENV['ALIPAY_URL']}?_input_charset=utf-8"
+  "#{ENV['alipay_pid']}?_input_charset=utf-8"
 end
 
 
@@ -237,21 +247,15 @@ def build_is_request_sign_valid? result_options
   options = result_options.to_hash
   options.extract!("controller", "action", "format")
 
-  if options["sign_type"] == "MD5"
-    options["sign"] == build_generate_sign(options)
-  elsif options["sign_type"] == "RSA"
-    build_rsa_verify?(build_sign_data(options.dup), options['sign'])
-  end
+  options["sign"] == build_generate_sign(options)
+
 end
 
 def build_generate_sign options
   sign_data = build_sign_data(options.dup)
 
-  if options["sign_type"] == "MD5"
-    Digest::MD5.hexdigest(sign_data + ENV['ALIPAY_MD5_SECRET'])
-  elsif options["sign_type"] == "RSA"
-    build_rsa_sign(sign_data)
-  end
+    Digest::MD5.hexdigest(sign_data + ENV["alipay_md5_secret"])
+
 end
 
 
