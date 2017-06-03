@@ -3,8 +3,8 @@ class PaymentsController < ApplicationController
   protect_from_forgery except: [:pay_return, :pay_notify]
 
   before_action :require_login, except: [:pay_return, :pay_notify]
-  before_action :auth_request_pause, only: [:pay_return, :pay_notify]
-  before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
+  before_action :auth_request, only: [:pay_return, :pay_notify]
+  # before_action :find_and_validate_payment_no, only: [:pay_return, :pay_notify]
 
 
   def index
@@ -144,16 +144,17 @@ class PaymentsController < ApplicationController
 
   private
   def is_payment_success?
-    !params[:pay_no].nil?
+    !params[:trade_no].nil?
   end
 
   def update_status
-    @payment = Payment.find_by_payment_no(params[:trade_no])
+    @payment = Payment.find_by_payment_no(params[:out_trade_no])
     redirect_to root_path
   end
 
   def do_payment_test
-    @payment = Payment.find_by_payment_no(params[:trade_no])
+
+    @payment = Payment.find_by_payment_no(params[:out_trade_no])
     unless @payment.is_success? # 避免同步通知和异步通知多次调用
       if is_payment_success?
         @payment.do_success_payment! params
@@ -163,19 +164,20 @@ class PaymentsController < ApplicationController
     end
   end
 
-  def do_payment
-    unless @payment.is_success? # 避免同步通知和异步通知多次调用
-      if is_payment_success?
-        @payment.do_success_payment! params
-        redirect_to success_payments_path
-      else
-        @payment.do_failed_payment! params
-        redirect_to failed_payments_path
-      end
-    else
-     redirect_to success_payments_path
-    end
-  end
+  # def do_payment
+  #
+  #   unless @payment.is_success? # 避免同步通知和异步通知多次调用
+  #     if is_payment_success?
+  #       @payment.do_success_payment! params
+  #       redirect_to success_payments_path
+  #     else
+  #       @payment.do_failed_payment! params
+  #       redirect_to failed_payments_path
+  #     end
+  #   else
+  #    redirect_to success_payments_path
+  #   end
+  # end
 
   def auth_request_pause
   unless build_is_request_sign_valid?(params)
@@ -184,7 +186,7 @@ class PaymentsController < ApplicationController
   end
 end
 
-  def auth_request_pause
+  def auth_request
     option = params.to_hash
     if option["code"] != ENV["alipay_code_key"]
       redirect_to failed_payments_path
